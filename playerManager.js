@@ -35,9 +35,18 @@ async function loadPlayer(userId) {
     console.log(`Adding new user ${userId}`);
     chunk[userId] = { ...playerSchema };
     await saveChunk(chunk);
-    chunk[userId].justCreated = true; // optional flag if you want to know it's new
+    chunk[userId].justCreated = true; // Flag new user
   } else {
     console.log(`User ${userId} already exists`);
+    // Merge any new keys from schema to existing player
+    let updated = false;
+    for (const key of Object.keys(playerSchema)) {
+      if (!(key in chunk[userId])) {
+        chunk[userId][key] = playerSchema[key];
+        updated = true;
+      }
+    }
+    if (updated) await saveChunk(chunk);
     chunk[userId].justCreated = false;
   }
 
