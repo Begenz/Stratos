@@ -9,18 +9,8 @@ const client = new Client({
   ],
 });
 
-const prefix = process.env.PREFIX || "!";
-
 client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
-});
-
-client.on("messageCreate", (message) => {
-  if (message.author.bot) return;
-
-  if (message.content === `${prefix}ping`) {
-    message.channel.send("Pong!");
-  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
