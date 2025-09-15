@@ -1,28 +1,32 @@
 require("dotenv").config();
+const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const { Client, Collection, GatewayIntentBits } = require("discord.js");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
 client.commands = new Collection();
 
-// 🔍 Load all commands from nested folders in /commands
-const commandFolders = fs.readdirSync("./commands");
-for (const folder of commandFolders) {
-  const folderPath = path.join("./commands", folder);
-  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
-
-  for (const file of commandFiles) {
-    const command = require(path.join(folderPath, file));
-    if (command.data && command.execute) {
-      client.commands.set(command.data.name, command);
+// Dynamically load all command files
+const commandsPath = path.join(__dirname, "commands");
+for (const category of fs.readdirSync(commandsPath)) {
+  const categoryPath = path.join(commandsPath, category);
+  if (fs.lstatSync(categoryPath).isDirectory()) {
+    for (const file of fs.readdirSync(categoryPath)) {
+      const filePath = path.join(categoryPath, file);
+      try {
+        const command = require(filePath);
+        if (command.data && command.execute) {
+          client.commands.set(command.data.name, command);
+          console.log(`✅ Loaded command: ${command.data.name}`);
+        } else {
+          console.warn(`⚠️ Skipped ${file} — missing 'data' or 'execute'`);
+        }
+      } catch (err) {
+        console.error(`❌ Failed to load ${file}:`, err.message);
+      }
     }
   }
 }
@@ -35,14 +39,18 @@ client.on("interactionCreate", async interaction => {
   if (!interaction.isCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
-  if (!command) return;
+  if (!command) {
+    return interaction.reply({ content: "❌ Command not found.", ephemeral: true });
+  }
 
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(`❌ Error executing /${interaction.commandName}:`, error);
-    await interaction.reply({ content: "There was an error executing that command.", ephemeral: true });
+    console.error(`❌ Error executing ${interaction.commandName}:`, error);
+    await interaction.reply({ content: "⚠️ There was an error executing that command.", ephemeral: true });
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN).catch(err => {
+  console.error("❌ Login failed:", err.message);
+});
