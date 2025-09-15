@@ -65,29 +65,27 @@ if (fs.existsSync(messagesPath)) {
   }
 }
 
-// --- Register user on first message only ---
+// --- Message-based command handler & auto-registration ---
 client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+  if (message.author.bot || !message.content.startsWith("!")) return;
 
-  // Load player data and check if new
-  const player = await loadPlayer(message.author.id);
-
-  // Only send message if the user was just created
-  if (player.justCreated) {
-    message.channel.send(`Hi ${message.author.username}, you are now registered!`);
-  }
-
-  // Handle message-based commands
-  if (!message.content.startsWith("!")) return;
   const commandName = message.content.slice(1).split(" ")[0];
   const command = messageCommands.get(commandName);
-  if (command) {
-    try {
-      command.execute(message);
-    } catch (error) {
-      console.error(`❌ Error executing !${commandName}:`, error);
-      message.reply("⚠️ There was an error executing that command.");
+
+  try {
+    // Auto-register player if new
+    const player = await loadPlayer(message.author.id);
+
+    // Send welcome only if first time
+    if (player.justCreated) {
+      message.channel.send(`Hi ${message.author.username}, you are now registered!`);
     }
+
+    // Execute command if it exists
+    if (command) await command.execute(message);
+  } catch (error) {
+    console.error(`❌ Error executing !${commandName}:`, error);
+    message.reply("⚠️ There was an error executing that command.");
   }
 });
 
@@ -103,6 +101,8 @@ client.on("interactionCreate", async (interaction) => {
     });
 
   try {
+    // Ensure player exists for slash command as well
+    await loadPlayer(interaction.user.id);
     await command.execute(interaction);
   } catch (error) {
     console.error(`❌ Error executing /${interaction.commandName}:`, error);
