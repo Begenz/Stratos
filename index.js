@@ -17,7 +17,7 @@ client.commands = new Collection();
 // Message command collection
 const messageCommands = new Collection();
 
-// Load slash commands
+// Load slash commands from /commands
 const commandsPath = path.join(__dirname, "commands");
 for (const category of fs.readdirSync(commandsPath)) {
   const categoryPath = path.join(commandsPath, category);
@@ -39,7 +39,7 @@ for (const category of fs.readdirSync(commandsPath)) {
   }
 }
 
-// Load message-based commands
+// Load message-based commands from /messages
 const messagesPath = path.join(__dirname, "messages");
 for (const category of fs.readdirSync(messagesPath)) {
   const categoryPath = path.join(messagesPath, category);
@@ -81,7 +81,7 @@ client.on("interactionCreate", async interaction => {
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(`❌ Error executing ${interaction.commandName}:`, error);
+    console.error(`❌ Error executing /${interaction.commandName}:`, error);
     await interaction.reply({
       content: "⚠️ There was an error executing that command.",
       ephemeral: true,
