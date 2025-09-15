@@ -14,15 +14,18 @@ for (const file of commandFiles) {
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
+// Replace with your test server's Guild ID
+const GUILD_ID = '123456789012345678';
+
 (async () => {
   try {
-    console.log('🔄 Refreshing global application (/) commands...');
+    console.log('🔄 Deploying commands to test guild...');
     await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: commands }
     );
-    console.log('✅ Global slash commands deployed.');
+    console.log('✅ Commands deployed to test server.');
   } catch (error) {
-    console.error('❌ Failed to deploy commands:', error);
+    console.error('❌ Deployment failed:', error);
   }
 })();
