@@ -1,3 +1,5 @@
+const { loadPlayer } = require('./playerManager');
+
 require("dotenv").config();
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const fs = require("fs");
@@ -9,6 +11,15 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
+});
+
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+
+    // Register the user
+    await loadPlayer(message.author.id);
+
+    message.channel.send(`Hi ${message.author.username}, you are now registered!`);
 });
 
 // Slash command collection
