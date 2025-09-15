@@ -4,7 +4,6 @@ const playerSchema = require('./playerSchema');
 
 const PLAYER_FILE = path.join(__dirname, 'data', 'players', '0000-0999.json');
 
-// Ensure the player file exists
 async function ensureFileExists() {
     try {
         await fs.access(PLAYER_FILE);
@@ -15,19 +14,16 @@ async function ensureFileExists() {
     }
 }
 
-// Load the entire JSON chunk
 async function loadChunk() {
     await ensureFileExists();
     const raw = await fs.readFile(PLAYER_FILE, 'utf8');
     return JSON.parse(raw);
 }
 
-// Save the entire JSON chunk
 async function saveChunk(chunkData) {
     await fs.writeFile(PLAYER_FILE, JSON.stringify(chunkData, null, 2), 'utf8');
 }
 
-// Load or create a single player
 async function loadPlayer(userId) {
     const chunk = await loadChunk();
 
@@ -42,17 +38,13 @@ async function loadPlayer(userId) {
     return chunk[userId];
 }
 
-// Update a single player
 async function updatePlayer(userId, newData) {
     const chunk = await loadChunk();
-
     if (!chunk[userId]) {
         chunk[userId] = { ...playerSchema };
     }
-
     chunk[userId] = { ...chunk[userId], ...newData };
     await saveChunk(chunk);
-
     return chunk[userId];
 }
 
