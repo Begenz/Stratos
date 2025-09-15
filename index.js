@@ -65,15 +65,30 @@ if (fs.existsSync(messagesPath)) {
   }
 }
 
-// --- Message registration for player ---
+// --- Register user on first message only ---
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // Register the user
-  await loadPlayer(message.author.id);
+  // Load player data and check if new
+  const player = await loadPlayer(message.author.id);
 
-  // Test message
-  message.channel.send(`Hi ${message.author.username}, you are now registered!`);
+  // Only send message if the user was just created
+  if (player.justCreated) {
+    message.channel.send(`Hi ${message.author.username}, you are now registered!`);
+  }
+
+  // Handle message-based commands
+  if (!message.content.startsWith("!")) return;
+  const commandName = message.content.slice(1).split(" ")[0];
+  const command = messageCommands.get(commandName);
+  if (command) {
+    try {
+      command.execute(message);
+    } catch (error) {
+      console.error(`❌ Error executing !${commandName}:`, error);
+      message.reply("⚠️ There was an error executing that command.");
+    }
+  }
 });
 
 // --- Slash command handler ---
@@ -95,23 +110,6 @@ client.on("interactionCreate", async (interaction) => {
       content: "⚠️ There was an error executing that command.",
       ephemeral: true,
     });
-  }
-});
-
-// --- Message-based command handler ---
-client.on("messageCreate", (message) => {
-  if (message.author.bot || !message.content.startsWith("!")) return;
-
-  const commandName = message.content.slice(1).split(" ")[0];
-  const command = messageCommands.get(commandName);
-
-  if (command) {
-    try {
-      command.execute(message);
-    } catch (error) {
-      console.error(`❌ Error executing !${commandName}:`, error);
-      message.reply("⚠️ There was an error executing that command.");
-    }
   }
 });
 
