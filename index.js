@@ -1,29 +1,48 @@
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
-const { REST, Routes } = require("discord.js");
+const { Client, Collection, GatewayIntentBits } = require("discord.js");
 
-const commands = [];
-const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
 
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  commands.push(command.data.toJSON());
+client.commands = new Collection();
+
+// 🔍 Load all commands from nested folders in /commands
+const commandFolders = fs.readdirSync("./commands");
+for (const folder of commandFolders) {
+  const folderPath = path.join("./commands", folder);
+  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
+
+  for (const file of commandFiles) {
+    const command = require(path.join(folderPath, file));
+    if (command.data && command.execute) {
+      client.commands.set(command.data.name, command);
+    }
+  }
 }
 
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+client.once("ready", () => {
+  console.log(`✅ Bot is online as ${client.user.tag}`);
+});
 
-(async () => {
+client.on("interactionCreate", async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
   try {
-    console.log("🔄 Refreshing application (/) commands...");
-
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
-
-    console.log("✅ Slash commands deployed.");
+    await command.execute(interaction);
   } catch (error) {
-    console.error(error);
+    console.error(`❌ Error executing /${interaction.commandName}:`, error);
+    await interaction.reply({ content: "There was an error executing that command.", ephemeral: true });
   }
-})();
+});
+
+client.login(process.env.DISCORD_TOKEN);
