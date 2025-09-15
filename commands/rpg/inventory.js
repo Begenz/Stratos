@@ -1,11 +1,10 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('inventory')
-    .setDescription('Check your cross-server inventory'),
+    .setDescription('Displays your inventory'),
   async execute(interaction) {
-    // Placeholder logic
-    await interaction.reply("🧳 Your inventory is empty... for now.");
-  }
+    await interaction.reply('🧰 Your inventory is empty—for now.');
+  },
 };
